@@ -1,4 +1,6 @@
 
+void mkernel(double *A, double* B, double* C, int k);
+
 /* Computes C = AB + C */
 void shpc_dgemm( int m, int n, int k, 
                     double *A, int rsA, int csA, 
