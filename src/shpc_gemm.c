@@ -78,13 +78,14 @@ void shpc_dgemm( int m, int n, int k,
         printf("gemm not implemented for arbitrary size yet\n");
         exit(1);
     }
+    double* Apack = malloc(MC * KC * sizeof(double));
+    double* Bpack = malloc(KC * NC * sizeof(double));
     for (int i_nc = 0; i_nc < n; i_nc += NC)
     {
         int amnt_nc = min(NC, n - i_nc);
         for (int i_kc = 0; i_kc < k; i_kc += KC)
         {
             int amnt_kc = min(KC, k - i_kc);
-            double* Bpack = malloc(amnt_kc * amnt_nc * sizeof(double));
             int rsBpack = amnt_nc;
             int csBpack = 1;
             double* Bslice = &RC(B, i_kc, i_nc);
@@ -99,7 +100,6 @@ void shpc_dgemm( int m, int n, int k,
             for (int i_mc = 0; i_mc < m; i_mc += MC)
             {
                 int amnt_mc = min(MC, m - i_mc);
-                double* Apack = malloc(amnt_mc * amnt_kc * sizeof(double));
                 int rsApack = 1;
                 int csApack = amnt_mc;
                 double* Aslice = &RC(A, i_mc, i_kc);
@@ -122,9 +122,7 @@ void shpc_dgemm( int m, int n, int k,
                     }
                     
                 }
-                free(Apack);
             }
-            free(Bpack);
         }
         
     }

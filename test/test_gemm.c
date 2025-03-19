@@ -82,7 +82,7 @@ int test_gemm( int nrepeats, int first, int last, int inc)
 			
 		}
 
-		gflops = 2 * m * n * k / ( t * 1.0e9 );
+		gflops = 2.0 * m * n * k / ( t * 1.0e9 );
 		
 		diff    = shpc_maxabsdiff( m, n, C, rsC, csC, Cref, rsC, csC );
         maxdiff = max ( diff, maxdiff );
