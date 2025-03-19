@@ -68,18 +68,31 @@ void mkernel(double *A, int rsA, int csA, double* B, int rsB, int csB, double* C
     _mm256_storeu_pd(&RC(C,4,5), c_1_5);
 }
 
+void triple_loop_dgemm(int m, int n, int k, double *A, int rsA, int csA, double *B, int rsB, int csB, double *C, int rsC, int csC)
+{
+    for (int i = 0; i < m; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            double dot = 0;
+            for (int p = 0; p < k; p++)
+            {
+                dot += RC(A, i, p) * RC(B, p, j);
+            }
+            RC(C, i, j) += dot;
+        }
+    }
+}
+
 void shpc_dgemm( int m, int n, int k,                                            
                     double *A, int rsA, int csA,                                
                     double *B, int rsB, int csB,                                
                     double *C, int rsC, int csC )
 {
-    if (m % MR != 0 || n % NR != 0)
-    {
-        printf("gemm not implemented for arbitrary size yet\n");
-        exit(1);
-    }
-    double* Apack = malloc(MC * KC * sizeof(double));
-    double* Bpack = malloc(KC * NC * sizeof(double));
+    // bool arbitrary_size = m % MR != 0 || n % NR != 0;
+    double Apack[MC*KC];
+    double Bpack[KC*NC];
+
     for (int i_nc = 0; i_nc < n; i_nc += NC)
     {
         int amnt_nc = min(NC, n - i_nc);
@@ -118,7 +131,14 @@ void shpc_dgemm( int m, int n, int k,
                         double* Cblock = &RC(C, i_mc + i_mr, i_nc + i_nr);
                         double* Ablock = &RC(Apack, i_mr, 0);
                         double* Bblock = &RC(Bpack, 0, i_nr);
-                        mkernel(Ablock, rsApack, csApack, Bblock, rsBpack, csBpack, Cblock, rsC, csC, amnt_kc);
+                        if (m-i_mr < MR || n-i_nr < NR)
+                        {
+                            int amnt_mr = min(MR, m - i_mr);
+                            int amnt_nr = min(NR, n - i_nr);
+                            triple_loop_dgemm(amnt_mr, amnt_nr, amnt_kc, Ablock, rsApack, csApack, Bblock, rsBpack, csBpack, Cblock, rsC, csC);
+                        } else {
+                            mkernel(Ablock, rsApack, csApack, Bblock, rsBpack, csBpack, Cblock, rsC, csC, amnt_kc);
+                        }
                     }
                     
                 }
