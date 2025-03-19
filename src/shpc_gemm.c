@@ -10,6 +10,7 @@
 #define NC 1296
 #define KC 402
 
+// rsMAT and csMAT must be in scope
 #define RC(MAT, ROW, COL) MAT[ROW * rs##MAT + COL * cs##MAT]
 
 #define UKERN_LOOP(COL) \
@@ -23,10 +24,7 @@
 // expects column-major A and row-major B
 // excepts column major C
 // A is MR x k, B is k x NR
-void mkernel(double *A, double* B, double* C, int rsC, int csC, int k) {
-    const int rsA = 1, csB = 1;
-    const csA = MR;
-    const rsB = NR;
+void mkernel(double *A, int rsA, int csA, double* B, int rsB, int csB, double* C, int rsC, int csC, int k) {
     __m256d c_0_0 = _mm256_loadu_pd(&RC(C, 0, 0));
     __m256d c_0_1 = _mm256_loadu_pd(&RC(C, 0, 1));
     __m256d c_0_2 = _mm256_loadu_pd(&RC(C, 0, 2));
@@ -73,7 +71,36 @@ void shpc_dgemm( int m, int n, int k,
                     double *B, int rsB, int csB,                                
                     double *C, int rsC, int csC )
 {
-
-    // Your code goes here. 
+    if (m % MR != 0 || n % NR != 0)
+    {
+        printf("gemm not implemented for arbitrary size yet\n");
+        exit(1);
+    }
+    for (int i_nc = 0; i_nc < n; i_nc += NC)
+    {
+        int amnt_nc = min(NC, n - i_nc);
+        for (int i_kc = 0; i_kc < k; i_kc += KC)
+        {
+            int amnt_kc = min(KC, k - i_kc);
+            for (int i_mc = 0; i_mc < m; i_mc += MC)
+            {
+                int amnt_mc = min(MC, m - i_mc);
+                for (int i_nr = 0; i_nr < amnt_nc; i_nr += NR)
+                {
+                    for (int i_mr = 0; i_mr < amnt_nc; i_mr += MR)
+                    {
+                        double* Cblock = &RC(C, i_mc + i_mr, i_nc + i_nr);
+                        double* Ablock = &RC(A, i_mc + i_mr, i_kc);
+                        double* Bblock = &RC(B, i_kc, i_nc + i_nr);
+                        mkernel(Ablock, rsA, csA, Bblock, rsB, csB, Cblock, rsC, csC, amnt_kc);
+                    }
+                    
+                }
+                
+            }
+            
+        }
+        
+    }
     
 }   
