@@ -84,6 +84,18 @@ void shpc_dgemm( int m, int n, int k,
         for (int i_kc = 0; i_kc < k; i_kc += KC)
         {
             int amnt_kc = min(KC, k - i_kc);
+            double* Bpack = malloc(amnt_kc * amnt_nc * sizeof(double));
+            int rsBpack = amnt_nc;
+            int csBpack = 1;
+            double* Bslice = &RC(B, i_kc, i_nc);
+            for (int i = 0; i < amnt_kc; i++)
+            {
+                for (int j = 0; j < amnt_nc; j++)
+                {
+                    RC(Bpack, i, j) = Bslice[i * rsB + j * csB];
+                }
+                
+            }
             for (int i_mc = 0; i_mc < m; i_mc += MC)
             {
                 int amnt_mc = min(MC, m - i_mc);
@@ -105,14 +117,14 @@ void shpc_dgemm( int m, int n, int k,
                     {
                         double* Cblock = &RC(C, i_mc + i_mr, i_nc + i_nr);
                         double* Ablock = &RC(Apack, i_mr, 0);
-                        double* Bblock = &RC(B, i_kc, i_nc + i_nr);
-                        mkernel(Ablock, rsA, csA, Bblock, rsB, csB, Cblock, rsC, csC, amnt_kc);
+                        double* Bblock = &RC(Bpack, 0, i_nr);
+                        mkernel(Ablock, rsApack, csApack, Bblock, rsBpack, csBpack, Cblock, rsC, csC, amnt_kc);
                     }
                     
                 }
                 free(Apack);
             }
-            
+            free(Bpack);
         }
         
     }
