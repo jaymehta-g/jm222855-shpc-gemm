@@ -4,6 +4,6 @@ set -e
 
 make
 
-./driver.x 3 48 480 48
+./driver.x 3 48 576 48
 
 make clean

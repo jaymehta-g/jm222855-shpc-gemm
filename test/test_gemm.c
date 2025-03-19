@@ -36,6 +36,7 @@ int test_gemm( int nrepeats, int first, int last, int inc)
 
 		rsA = rsB = rsC = 1;
 
+
     	A = ( double * ) malloc( csA * k * sizeof( double ) );
     	B = ( double * ) malloc( csB * n * sizeof( double ) );
     	C = ( double * ) malloc( csC * n * sizeof( double ) );

@@ -3,9 +3,11 @@
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
+// Computed based on number of vector registers available
 #define MR 8
 #define NR 6
 
+// Computed based on L1 and L2 cache sizes
 #define MC 608
 #define NC 1296
 #define KC 402
@@ -85,18 +87,30 @@ void shpc_dgemm( int m, int n, int k,
             for (int i_mc = 0; i_mc < m; i_mc += MC)
             {
                 int amnt_mc = min(MC, m - i_mc);
+                double* Apack = malloc(amnt_mc * amnt_kc * sizeof(double));
+                int rsApack = 1;
+                int csApack = amnt_mc;
+                double* Aslice = &RC(A, i_mc, i_kc);
+                for (int i = 0; i < amnt_mc; i++)
+                {
+                    for (int j = 0; j < amnt_kc; j++)
+                    {
+                        RC(Apack, i, j) = Aslice[i * rsA + j * csA];
+                    }
+                    
+                }
                 for (int i_nr = 0; i_nr < amnt_nc; i_nr += NR)
                 {
-                    for (int i_mr = 0; i_mr < amnt_nc; i_mr += MR)
+                    for (int i_mr = 0; i_mr < amnt_mc; i_mr += MR)
                     {
                         double* Cblock = &RC(C, i_mc + i_mr, i_nc + i_nr);
-                        double* Ablock = &RC(A, i_mc + i_mr, i_kc);
+                        double* Ablock = &RC(Apack, i_mr, 0);
                         double* Bblock = &RC(B, i_kc, i_nc + i_nr);
                         mkernel(Ablock, rsA, csA, Bblock, rsB, csB, Cblock, rsC, csC, amnt_kc);
                     }
                     
                 }
-                
+                free(Apack);
             }
             
         }
